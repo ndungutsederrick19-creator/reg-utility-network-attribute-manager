@@ -1,7 +1,7 @@
 export const portalDefault = 'https://gisweb.reg.rw/portal';
 export function secureUrl(value) { const u=new URL(value); if(u.protocol!=='https:') throw Error('An HTTPS URL is required.'); if(u.username||u.password||u.search||u.hash) throw Error('Use a clean URL without credentials or query parameters.'); return u.href.replace(/\/$/,''); }
 export function randomKey(){const b=crypto.getRandomValues(new Uint8Array(32));return base64(b);}
-export async function passwordSession(username,password,referer,fetcher=fetch){
+export async function passwordSession(username,password,referer,fetcher=fetch.bind(globalThis)){
  if(!username.trim()||!password)throw Error('Enter your REG username and password.');
  const origin=new URL(referer);if(origin.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(origin.hostname))throw Error('Password sign-in requires HTTPS.');
  const body=new URLSearchParams({f:'json',username:username.trim(),password,client:'referer',referer:origin.origin+'/',expiration:'60'});
@@ -43,7 +43,7 @@ export function parseValue(text,field,domain,isNull=false){
 }
 export function inspect(meta,features){return meta.fields.map(f=>{let nulls=0,invalid=0;for(const feature of features){const v=feature.attributes[f.name],d=domainFor(meta,f,feature.attributes);if(v==null)nulls++;else if(d?.type==='codedValue'&&!d.codedValues.some(c=>c.code===v)||d?.type==='range'&&(v<d.range[0]||v>d.range[1]))invalid++;}return {field:f.name,alias:f.alias||f.name,type:f.type,nullable:f.nullable!==false,nulls,invalid};});}
 export class ArcGIS {
- constructor(portal,token,expires,fetcher=fetch){this.portal=secureUrl(portal);this.token=token;this.expires=expires;this.fetcher=fetcher;this.allowed=new Set([new URL(this.portal).origin]);}
+ constructor(portal,token,expires,fetcher=fetch.bind(globalThis)){this.portal=secureUrl(portal);this.token=token;this.expires=expires;this.fetcher=fetcher;this.allowed=new Set([new URL(this.portal).origin]);}
  allow(url){const u=secureUrl(url);this.allowed.add(new URL(u).origin);return u;}
  async request(url,params={}){const u=secureUrl(url);if(!this.allowed.has(new URL(u).origin))throw Error('Service origin has not been approved.');if(Date.now()>=this.expires)throw Error('Session expired. Sign in again.');const body=new URLSearchParams({f:'json',...params,token:this.token});const r=await this.fetcher(u,{method:'POST',body,credentials:'omit',cache:'no-store',referrerPolicy:'origin'});if(!r.ok)throw Error(`Service request failed (${r.status}).`);const j=await r.json();if(j.error)throw Error(`ArcGIS ${j.error.code}: ${j.error.message}. ${(j.error.details||[]).join(' ')}`);return j;}
  async discover(term=''){let results=[],start=1;do{const j=await this.request(this.portal+'/sharing/rest/search',{q:`type:"Feature Service" ${term}`,start,num:100,sortField:'title',sortOrder:'asc'});results.push(...(j.results||[]));start=j.nextStart;}while(start>0);return results;}
@@ -51,3 +51,4 @@ export class ArcGIS {
  async records(url,ids,meta){if(!ids.length)return [];const j=await this.request(url+'/query',{objectIds:ids.join(','),outFields:'*',returnGeometry:false});const features=j.features||[];const key=meta.objectIdField||meta.fields.find(f=>f.type==='esriFieldTypeOID')?.name;const found=new Set(features.map(f=>f.attributes[key]));if(j.exceededTransferLimit||ids.some(id=>!found.has(id))){if(ids.length===1)throw Error(`Record ${ids[0]} is missing or inaccessible; refresh and retry.`);const m=Math.floor(ids.length/2);return [...await this.records(url,ids.slice(0,m),meta),...await this.records(url,ids.slice(m),meta)];}const byId=new Map(features.map(f=>[f.attributes[key],f]));return ids.map(id=>byId.get(id));}
  async all(url,meta,where,progress=()=>{}){const ids=await this.ids(url,where);const size=Math.max(1,Math.min(meta.maxRecordCount||1000,500));let rows=[];for(let i=0;i<ids.length;i+=size){rows.push(...await this.records(url,ids.slice(i,i+size),meta));progress(rows.length,ids.length);}return rows;}
 }
+
