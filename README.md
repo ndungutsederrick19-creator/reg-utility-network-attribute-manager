@@ -6,7 +6,7 @@ A dependency-free browser app for the REG ArcGIS Enterprise portal at https://gi
 
 1. Extract the ZIP. Drag the **dist folder** to Netlify's manual deployment page. This folder contains the complete static application and security headers.
 2. Keep the site's URL stable; rename the Netlify site before registering OAuth redirects.
-3. Open the deployed app and enter the registered client ID and exact redirect URL, for example `https://your-site.netlify.app/`. The slash matters. The redirect must exactly match the app URL and the registered redirect. Do not use a query string or fragment.
+3. Configure `dist/config.js` once with the registered client ID and exact redirect URL, then open the deployed app and click **Sign in with REG Portal**. A redirect looks like for example `https://your-site.netlify.app/`. The slash matters. The redirect must exactly match the app URL and the registered redirect. Do not use a query string or fragment.
 4. Sign in on the REG portal. The app exchanges the returned authorization code using its one-time PKCE verifier. There is no client secret.
 
 For Git-connected Netlify deployment: push this entire repository to GitHub, import it in Netlify, leave the build command empty, and use `dist` as the publish directory. `netlify.toml` supplies these settings.
@@ -26,7 +26,7 @@ Ask a REG portal administrator to register a browser application and supply **on
 
 The portal and federated feature services must permit cross-origin browser requests from the deployed app's HTTPS origin. They must have trusted certificates. Browser CORS, server authorization, licensing, and portal policies cannot be overridden by this static app. Configure CORS with the administrator if sign-in or service requests fail. Do not place a client secret in `config.js`, Netlify variables exposed to the browser, or GitHub.
 
-Defaults can be set in `dist/config.js`, or entered on the sign-in screen. Public app settings are stored in localStorage. Tokens are held in memory only, expire according to the token response, and are never stored in localStorage. Reloading requires a new sign-in. The one-time verifier, OAuth state, and registration settings are stored in sessionStorage for at most ten minutes and cleared after callback. The callback query is removed from browser history before token exchange. Sign-out clears app state; it does not sign out of the portal's own session. No automatic refresh token storage is implemented.
+The administrator sets the public registration defaults in `dist/config.js`. Users see only **Sign in with REG Portal**, then enter their username and password on the REG portal. A missing client ID stops sign-in locally with a setup message, rather than sending an invalid authorize request. Previously saved browser client ID entries are discarded. Tokens are held in memory only, expire according to the token response, and are never stored in localStorage. Reloading requires a new sign-in. The one-time verifier, OAuth state, and registration settings are stored in sessionStorage for at most ten minutes and cleared after callback. The callback query is removed from browser history before token exchange. Sign-out clears app state; it does not sign out of the portal's own session. No automatic refresh token storage is implemented.
 
 ## Workflow
 
@@ -66,3 +66,4 @@ Open `http://127.0.0.1:4173/` for the local preview. Local sign-in requires its 
 - Complete ID-based queries: https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer/
 
 This is an independently prepared tool, not an official REG or Esri product. Successful live REG sign-in, service discovery, editing and export must be acceptance-tested by an authorized account after registration. Use a disposable approved test record for the first write test.
+
