@@ -1,6 +1,12 @@
 # REG Utility Network Attribute Manager
 
-A dependency-free browser app for the REG ArcGIS Enterprise portal at https://gisweb.reg.rw/portal/. It reads real service metadata after authentication and supports reviewed attribute updates and complete XLSX exports. No passwords, client secrets, tokens, invented REG fields, or live data are embedded in the application.
+A dependency-free browser app for the REG ArcGIS Enterprise portal at https://gisweb.reg.rw/portal/. It reads real service metadata after authentication and supports reviewed attribute updates and complete XLSX exports. No account credentials, client secrets, live tokens, invented REG fields, or live data are embedded in the application.
+
+## Username and password sign-in (default)
+
+Click **Sign in with REG Portal** to open the app's REG login form. Enter your REG username and password. The app sends them by HTTPS POST directly to `https://gisweb.reg.rw/portal/sharing/rest/generateToken`, with a one-hour requested expiry and a token bound to this app's origin. No client ID is needed for this method. The password is cleared from the form before sending and is not saved to localStorage, sessionStorage, GitHub, Netlify, or an app server. Only the issued token stays in memory. Subsequent API requests send an origin-only Referer required by the token binding.
+
+This works only for accounts REG accepts through token generation and if REG permits CORS from the hosting origin. Accounts using SAML, IWA, SSO or MFA may require OAuth instead. OAuth PKCE remains available as a secondary button when a valid client ID is configured in `dist/config.js`. No real REG login has been tested. Avoid submitting passwords into chat; enter them in the login form yourself.
 
 ## Deploy to Netlify (fastest)
 
@@ -20,7 +26,7 @@ GitHub stores source code; **GitHub Pages** hosts the website. A Netlify deploym
 3. For GitHub Pages, open repository Settings → Pages → choose **GitHub Actions**, then run the **Deploy GitHub Pages** workflow from Actions. Pages availability for private repositories depends on your GitHub plan. A Pages site can still be publicly accessible even when its repository is private; verify the hosting audience before deployment.
 4. Register the final Pages redirect, typically `https://YOUR-ACCOUNT.github.io/reg-utility-network-attribute-manager/`, with REG's portal application. All asset paths are relative and support a repository subpath.
 
-## Essential OAuth registration
+## Optional OAuth / SSO registration
 
 Ask a REG portal administrator to register a browser application and supply **only the public client ID and exact permitted redirect URL**. You do not need to provide credentials to the app builder. Register an application in the REG Enterprise portal, not in an unrelated ArcGIS Online organization. PKCE requires ArcGIS Enterprise 10.8.1 or later; the specific REG installation's support has not been authenticated or verified.
 
@@ -66,4 +72,5 @@ Open `http://127.0.0.1:4173/` for the local preview. Local sign-in requires its 
 - Complete ID-based queries: https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer/
 
 This is an independently prepared tool, not an official REG or Esri product. Successful live REG sign-in, service discovery, editing and export must be acceptance-tested by an authorized account after registration. Use a disposable approved test record for the first write test.
+
 

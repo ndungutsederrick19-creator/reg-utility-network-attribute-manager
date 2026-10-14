@@ -20,3 +20,6 @@ This package contains ready-to-upload Netlify static files, GitHub Actions check
 ## Reproduce
 
 Run `node --test tests/*.test.mjs`. For the synthetic browser test, run `node tests/ui-server.mjs` and visit `http://127.0.0.1:4174/__tests__/harness.html`. Synthetic data appears with a prominent test notice; no REG calls are made. The test server and fixtures are outside `dist` and are not part of the deployed site. Run `node server.mjs` for the real unauthenticated local app.
+
+## Username/password login update
+Four additional synthetic tests pass (14 total): fixed REG HTTPS endpoint and POST/origin binding, clearing request passwords, missing credentials/insecure origin rejection, generic rejected-login errors, invalid expiry and CORS handling. The username/password modal was verified locally. No real account authentication is claimed.
