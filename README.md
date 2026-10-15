@@ -1,5 +1,17 @@
 # REG Utility Network Attribute Manager
 
+## Bulk transformer / device updates
+
+Select the correct feature layer or table. For versioned data, enable direct edits to the verified default version. Paste multiple Global IDs into the search box (one per line, or separated by commas/semicolons). Search respects the applied WHERE filter. Bulk tools operate on **all matching records across pages**, with a limit of 500 devices per reviewed batch.
+
+- **Shared change:** choose **Set a field on all matching devices**, select the field, enter a value/domain code or exact domain label, and prepare a review. Each record is validated against its own subtype domain, permissions and ownership.
+- **Different values per device:** choose **Download Excel edit template**. Keep the Global ID column unchanged. Fill in the **Edits** worksheet using its actual service field headers. Keep other worksheets for guidance. Upload the completed `.xlsx` file; workbooks with an `Edits` worksheet use that sheet, otherwise the first visible sheet is read. Older `.xls` files must be saved as `.xlsx` first. The file is read in the browser, not uploaded to an app server.
+- Blank Excel cells mean **leave unchanged**. Write `__NULL__` to clear a nullable field or `__EMPTY__` to write empty text. Use domain codes or exact labels. Date cells may be formatted Excel dates, ISO timestamps or the original exported epoch millisecond values. Unformatted numeric date serials are rejected as ambiguous. Duplicate Global IDs, unknown/ambiguous column headers, formulas, invalid values and missing/inaccessible records block the entire review. Existing records only; this does not create transformers or update geometry.
+- Review every before/after value and the target service/version. Only **Confirm and save all reviewed devices** sends edits. The app re-fetches metadata and all affected records, rechecks permission/domain/version/subtype and changed-field conflicts, and sends one `applyEdits` request with rollback requested. Pre-save checking is not an atomic compare-and-swap; concurrent writes can still race after the check.
+- Inspect the per-device save report. Every record must have its own successful server result before it is reported saved. Mixed failure responses are flagged for verification rather than claiming rollback succeeded. A lost connection or ambiguous response is an **unknown outcome**: refresh the server records before preparing another batch. Submitted reviews cannot be sent again automatically. Batch import ignores the Global ID search box when matching uploaded IDs but still respects the applied WHERE filter.
+
+Limits: 500 device rows, 1500 columns and 25 MB compressed workbook size, with bounded decompression. Standard XLSX ZIP entries, inline/shared strings and date-formatted cells are supported. Unsupported/encrypted/corrupt workbooks are rejected. Network rule or permission errors remain authoritative on the REG server. No production records were changed during development tests.
+
 A dependency-free browser app for the REG ArcGIS Enterprise portal at https://gisweb.reg.rw/portal/. It reads real service metadata after authentication and supports reviewed attribute updates and complete XLSX exports. No account credentials, client secrets, live tokens, invented REG fields, or live data are embedded in the application.
 
 ## Username and password sign-in (default)
@@ -51,11 +63,11 @@ Updates require the signed-in account's edit privileges, a service/layer Update 
 
 For versioned Utility Network feature services, the app reads `VersionManagementServer` to verify the default version's name and GUID. Queries and exports then use that explicit `gdbVersion`. To edit, select **Enable direct attribute edits to this live default version**, open a record, edit permitted values, review the target version and changes, then **Confirm and save to UN service**. This is an immediate update to the default version through the layer's `applyEdits` operation, not a local-only draft or a file upload. The default version is rechecked before saving. No edit session ID or lock is used for direct default edits. If default-version discovery fails, versioned editing stays disabled and displays the reason. A protected default version or additional server rules may still reject an update.
 
-This package does not implement named-version sessions, branch-version locks, reconcile/post, topology validation, association management, geometry updates or bulk file imports. Use your approved ArcGIS workflow when those operations are required. Missing values can be filled by typing directly; typing unchecks **Set NULL**. Select **Set NULL** explicitly to clear a nullable field. Server responses determine whether each save succeeded.
+This package does not implement named-version sessions, branch-version locks, reconcile/post, topology validation, association management, geometry updates or device creation. Use your approved ArcGIS workflow when those operations are required. Missing values can be filled by typing directly; typing unchecks **Set NULL**. Select **Set NULL** explicitly to clear a nullable field. Server responses determine whether each save succeeded.
 
 ## Local development and verification
 
-Install Node.js 22 or later. There are no npm dependencies or installation step.
+Install Node.js 22 or later. There are no npm dependencies or installation step. XLSX import uses the browser XML parser and native ZIP decompression.
 
 ```text
 node --test tests/*.test.mjs
@@ -81,3 +93,4 @@ This is an independently prepared tool, not an official REG or Esri product. Suc
 
 ## Global ID search
 After selecting a layer or table, paste a complete Global ID into **Find a record by Global ID** and click **Find Global ID**. Braces are optional. Search uses the actual Global ID field from service metadata, scans all accessible matching records through a server-side filter, and combines with the applied WHERE filter. Clear search restores the applied WHERE results. Click a matching row to inspect/edit. XLSX export respects the active Global ID search. Layers without a Global ID field show an explanatory message.
+

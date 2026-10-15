@@ -1,5 +1,9 @@
 # Verification report — 14 October 2026
 
+## Bulk update and Excel import update — 15 October 2026
+
+34 Node tests pass, including multi-ID queries, header/ID matching, blank versus explicit NULL handling, duplicate and invalid data rejection, per-record permission/domain checks, pre-save conflict checks, single-request batch submission, mixed/unknown outcome reporting, duplicate-submit prevention, and XLSX ZIP integrity validation. Four additional browser parser tests pass for inline/numeric cells, shared strings and formatted dates, formula rejection, and unsafe XML declaration rejection. Synthetic browser tests searched for two Global IDs, reviewed and saved a shared field on both records, imported a compressed XLSX with different field values per device, reviewed and saved both, downloaded the actual edit template, and re-imported it unchanged with zero proposed updates. The downloaded template was independently read successfully. Production REG writes remain untested; no real account credentials or production rows were used in fixtures.
+
 ## Direct default-version editing update — 15 October 2026
 
 23 automated tests pass. Additional coverage verifies that versioned edits require a server-verified default version and explicit enablement; account, field, ownership and audit restrictions still apply; queries and writes carry the same gdbVersion without named-version session IDs; version metadata uses header authentication. Browser testing with a synthetic versioned service verified selecting the default target, enabling editing, typing into a NULL field, reviewing the target and before/after values, and saving through applyEdits. The synthetic server required the correct version parameter and the updated value was reloaded. No production REG write was performed. Earlier statements about blanket versioned editing restrictions below describe the initial release and are superseded by this update.
