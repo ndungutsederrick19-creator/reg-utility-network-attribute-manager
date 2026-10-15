@@ -1,5 +1,11 @@
 # REG Utility Network Attribute Manager
 
+## Workbook attribute filter
+
+The supplied `Data_collection_template Updated Version (2).xlsx` defines the allowed business attributes. `dist/attribute-profiles.json` contains only its extracted attribute headings, grouped by its 15 worksheets; the original workbook and its other cell contents are not published. **All workbook attributes** is the default view. Choose **Transformer**, **LV_Support**, **Substation**, or another workbook group to narrow it further. The chosen group follows the selected layer/table and applies to devices, junctions, lines and other feature classes.
+
+Fields match actual service names or aliases after case, whitespace and punctuation normalization. No semantic/fuzzy mapping or missing field creation is performed. The interface reports unmatched workbook headings. A group with no matching service fields stays empty rather than showing unrelated attributes. The filter governs the attribute table, schema/null inspection, record editor, regular XLSX export, bulk field selector and Excel edit template. Changed fields outside the selected group are rejected during import/save validation. Edit templates retain a Global ID linkage column for record matching, even when Global ID is not listed as a workbook business attribute. This is an application visibility/editing filter, not a database schema modification or server access restriction.
+
 ## Bulk transformer / device updates
 
 Select the correct feature layer or table. For versioned data, enable direct edits to the verified default version. Paste multiple Global IDs into the search box (one per line, or separated by commas/semicolons). Search respects the applied WHERE filter. Bulk tools operate on **all matching records across pages**, with a limit of 500 devices per reviewed batch.

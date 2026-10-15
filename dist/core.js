@@ -24,6 +24,7 @@ function base64(b){return btoa(String.fromCharCode(...b)).replace(/\+/g,'-').rep
 export async function challenge(verifier){return base64(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier))));}
 export function domainFor(meta,field,attrs){const type=meta.types?.find(t=>t.id===attrs[meta.typeIdField]);return type?.domains?.[field.name] ?? field.domain;}
 export function editingReason(field,meta,user,attrs){
+ if(Array.isArray(meta.__allowedFields)&&!meta.__allowedFields.includes(field.name))return 'This field is excluded by the selected workbook attribute group.';
  const privileges=user?.privileges||[];
  const roleOk=privileges.includes('features:user:edit')||privileges.includes('features:user:fullEdit')||user?.role==='org_admin';
  if(!roleOk)return 'Account edit privilege is not confirmed.';

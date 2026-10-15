@@ -1,4 +1,4 @@
-import {parseGlobalIds,globalIdField,editable,editingReason,domainFor,parseValue,versionParameters,verifiedDefault} from './core.js?v=20261015-bulk';
+import {parseGlobalIds,globalIdField,editable,editingReason,domainFor,parseValue,versionParameters,verifiedDefault} from './core.js?v=20261015-template';
 export const BULK_LIMIT=500;
 export function normalizeId(value){const ids=parseGlobalIds(String(value??''));if(ids.length!==1)throw Error('Each row needs exactly one Global ID.');return ids[0];}
 function valueFor(raw,field,meta,attrs){

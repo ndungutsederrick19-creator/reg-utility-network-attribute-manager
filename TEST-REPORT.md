@@ -1,5 +1,9 @@
 # Verification report — 14 October 2026
 
+## Workbook field allowlist — 15 October 2026
+
+38 automated tests pass. Tests cover worksheet group extraction, conservative field-name/alias matching, unmatched headings without invented mappings, and editing restrictions outside the active group. A synthetic browser test verified that choosing Transformer reduced the table to the matching workbook attribute, the record editor and bulk dropdown exposed the same attribute, and the downloaded Excel template contained only that attribute plus the required Global ID linkage. The template headers and row count were independently verified. Real REG data/schema was not modified by this filtering work.
+
 ## Bulk update and Excel import update — 15 October 2026
 
 34 Node tests pass, including multi-ID queries, header/ID matching, blank versus explicit NULL handling, duplicate and invalid data rejection, per-record permission/domain checks, pre-save conflict checks, single-request batch submission, mixed/unknown outcome reporting, duplicate-submit prevention, and XLSX ZIP integrity validation. Four additional browser parser tests pass for inline/numeric cells, shared strings and formatted dates, formula rejection, and unsafe XML declaration rejection. Synthetic browser tests searched for two Global IDs, reviewed and saved a shared field on both records, imported a compressed XLSX with different field values per device, reviewed and saved both, downloaded the actual edit template, and re-imported it unchanged with zero proposed updates. The downloaded template was independently read successfully. Production REG writes remain untested; no real account credentials or production rows were used in fixtures.
