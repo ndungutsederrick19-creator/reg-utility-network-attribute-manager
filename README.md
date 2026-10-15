@@ -74,3 +74,6 @@ Open `http://127.0.0.1:4173/` for the local preview. Local sign-in requires its 
 This is an independently prepared tool, not an official REG or Esri product. Successful live REG sign-in, service discovery, editing and export must be acceptance-tested by an authorized account after registration. Use a disposable approved test record for the first write test.
 
 
+
+## Global ID search
+After selecting a layer or table, paste a complete Global ID into **Find a record by Global ID** and click **Find Global ID**. Braces are optional. Search uses the actual Global ID field from service metadata, scans all accessible matching records through a server-side filter, and combines with the applied WHERE filter. Clear search restores the applied WHERE results. Click a matching row to inspect/edit. XLSX export respects the active Global ID search. Layers without a Global ID field show an explanatory message.

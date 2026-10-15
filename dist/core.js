@@ -1,4 +1,12 @@
 export const portalDefault = 'https://gisweb.reg.rw/portal';
+export function globalIdField(meta){return meta.fields?.find(f=>f.name===meta.globalIdField)||meta.fields?.find(f=>f.type==='esriFieldTypeGlobalID')||null;}
+export function globalIdWhere(meta,input,base='1=1'){
+ if(!input.trim())return base.trim()||'1=1';
+ const field=globalIdField(meta);if(!field)throw Error('This layer or table has no Global ID field.');
+ if(!/^[A-Za-z_][A-Za-z0-9_.]*$/.test(field.name))throw Error('The Global ID field name is not supported for searching.');
+ const raw=input.trim();if(!/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\{[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\})$/i.test(raw))throw Error('Enter a complete Global ID, such as {12345678-1234-1234-1234-123456789ABC}.');
+ const id=raw.replace(/[{}]/g,'').toUpperCase();return `(${base.trim()||'1=1'}) AND ${field.name} = '{${id}}'`;
+}
 export function secureUrl(value) { const u=new URL(value); if(u.protocol!=='https:') throw Error('An HTTPS URL is required.'); if(u.username||u.password||u.search||u.hash) throw Error('Use a clean URL without credentials or query parameters.'); return u.href.replace(/\/$/,''); }
 export function randomKey(){const b=crypto.getRandomValues(new Uint8Array(32));return base64(b);}
 export async function passwordSession(username,password,referer,fetcher=fetch.bind(globalThis)){
