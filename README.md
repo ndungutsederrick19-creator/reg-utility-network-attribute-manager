@@ -1,3 +1,9 @@
+# Current Excel save workflow
+
+Upload a workbook, match actual service field names or unique aliases, and edit supported fields. Identical duplicate columns are included once; conflicting duplicates require an explicit mapping or Ignore choice. Locked identifiers/classification fields, server read-only fields and workbook-excluded columns remain reference data and are not submitted as attribute changes. Global ID is retained for record matching. Account, record ownership, service capabilities and domains are checked before saving.
+
+The Apply button saves directly after validation. Status, validation errors and per-device results appear in the Save section next to it. A fresh read from the same version checks accepted values. Only matching read-back results are labelled Saved and verified; unavailable or different values are reported separately. Submitted uploads cannot be resent automatically. Production REG writes have not been performed by the development tests.
+
 # REG Utility Network Attribute Manager
 
 ## Workbook attribute filter

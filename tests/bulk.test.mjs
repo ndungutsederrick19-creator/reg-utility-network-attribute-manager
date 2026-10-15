@@ -26,3 +26,6 @@ test('partial Excel rejects ambiguous normalized aliases instead of guessing',()
  const m={...meta,fields:[...meta.fields,{name:'OtherHeight',alias:'Pole-height',type:'esriFieldTypeDouble'}]};
  assert.throws(()=>parseImport([['Global ID','Pole height'],[gid(1),12]],m),/ambiguous/);
 });
+
+import {verifySaved} from '../dist/bulk.js';
+test('read-back verifies accepted changes and reports mismatched or unavailable values accurately',async()=>{const plan=makePlan([{globalId:gid(1),values:{Height:12}}],features,meta,user),results=[{id:1,status:'Saved'}];const checked=await verifySaved({records:async()=>[{attributes:{...features[0].attributes,Height:12}}]},'url',meta,plan,results);assert.equal(checked[0].status,'Saved and verified');assert.match((await verifySaved({records:async()=>features},'url',meta,plan,results))[0].status,/values differ/);assert.match((await verifySaved({records:async()=>{throw Error('offline');}},'url',meta,plan,results))[0].status,/verification unavailable/);});

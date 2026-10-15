@@ -33,4 +33,9 @@ export async function savePlan(api,url,meta,user,plan){
  const results=result.updateResults;if(!Array.isArray(results)||results.length!==plan.records.length)return plan.records.map(r=>({globalId:r.globalId,id:r.id,status:'Unknown — refresh before retrying',detail:'The server did not return one result per device.'}));
  return plan.records.map((r,i)=>{const found=results.find(x=>x.objectId===r.id);if(!found)return {globalId:r.globalId,id:r.id,status:'Unknown — refresh before retrying',detail:'Server result did not identify this device.'};if(found.success&&results.some(x=>!x.success))return {globalId:r.globalId,id:r.id,status:'Verify — batch reported an error',detail:'Rollback was requested. Refresh this record before retrying.'};return {globalId:r.globalId,id:r.id,status:found?.success?'Saved':'Failed',detail:found?.success?'Server accepted the update.':found?.error?.description||'Server rejected the update; rollback was requested.'};});
 }
+export async function verifySaved(api,url,meta,plan,results){
+ const accepted=results.filter(r=>r.status==='Saved');if(!accepted.length)return results;
+ let records;try{records=await api.records(url,accepted.map(r=>r.id),meta);}catch(error){return results.map(r=>r.status==='Saved'?{...r,status:'Accepted — verification unavailable',detail:'Server accepted the update, but read-back failed: '+error.message}:r);}
+ return results.map(r=>{if(r.status!=='Saved')return r;const actual=records.find(f=>f.attributes[meta.objectIdField]===r.id)?.attributes,expected=plan.records.find(f=>f.id===r.id);const mismatch=expected.changes.filter(c=>(actual?.[c.field]??null)!==c.after);return actual&&!mismatch.length?{...r,status:'Saved and verified',detail:'All submitted values match a fresh read from the same service version.'}:{...r,status:'Accepted — values differ',detail:'Server accepted the update, but fresh values differ or the record is unavailable. Refresh and inspect; do not automatically resend.'};});
+}
 
