@@ -1,0 +1,51 @@
+import {verifiedDefault} from './core.js?v=20261015-template';
+import {trackingField,surveyUsers,surveyIssues,newSurveyIssues} from './survey-checks.js?v=surveyor-monitor-20261015';
+export function attachSurveyMonitor({state,$,makeTable}){
+ let layers=[],account=null,timer=null,running=false,busy=false,previous=new Set(),generation=0;
+ const message=(value,error=false)=>{$('monitor-status').textContent=value;$('monitor-status').classList.toggle('error',error);};
+ function stop(reason='Monitoring stopped.'){running=false;clearTimeout(timer);timer=null;message(reason);}
+ function changed(){generation++;previous=new Set();stop('Settings changed. Run Check now or Start monitoring with your new selection.');$('monitor-summary').textContent='Previous results may be out of date. Run a new check.';}
+ function auth(){if(!state.api||!state.user)throw Error('Sign in through Attribute Manager first.');if(Date.now()>=state.api.expires)throw Error('Session expired. Sign in again before monitoring.');return state.api;}
+ async function action(task){if(busy||state.busy){message('Another operation is running. Try again when it finishes.',true);return;}busy=true;try{await task();}catch(error){stop(error.message);message(error.message,true);}finally{busy=false;}}
+ const selectedLayers=()=>layers.filter(layer=>layer.check.checked);
+ function selectedUsers(){return [...$('monitor-users').querySelectorAll('input:checked')].map(input=>input.value);}
+ async function readLayer(layer,api){
+  if(layer.meta.isDataVersioned){const root=layer.url.replace(/\/\d+$/,'');const info=verifiedDefault(await api.request(root.replace(/\/FeatureServer$/i,'/VersionManagementServer'),{},'GET'));api.versions.set(root,info.versionName);}
+  return api.all(layer.url,layer.meta,'1=1',(done,total)=>message('Reading '+layer.meta.name+': '+done+' / '+total+' records…'));
+ }
+ function assertCurrent(api,version){if(state.api!==api||generation!==version)throw Error('Session or monitor settings changed. Run a fresh check.');}
+ $('monitor-load').onclick=()=>action(async()=>{
+  const api=auth();changed();const version=generation;const choices=[...$('layers').options].filter(option=>option.value);if(!choices.length)throw Error('Open a Feature Service in Attribute Manager first.');
+  layers=[];account=api;$('monitor-layers').replaceChildren();$('monitor-users').replaceChildren();$('monitor-results').replaceChildren();$('monitor-coverage').replaceChildren();
+  for(const option of choices){assertCurrent(api,version);const box=document.createElement('details'),title=document.createElement('summary');title.textContent=option.text;box.append(title);$('monitor-layers').append(box);
+   try{const meta=await api.request(option.value);meta.objectIdField||=meta.fields?.find(field=>field.type==='esriFieldTypeOID')?.name;if(!meta.fields?.length||!meta.objectIdField)throw Error('No supported field schema / object ID.');
+    const check=document.createElement('input');check.type='checkbox';check.setAttribute('aria-label','Monitor layer '+option.text);const label=document.createElement('label');label.className='null-toggle';label.append(check,document.createTextNode('Monitor every accessible record in this layer'));box.append(label);
+    const fields=[];for(const field of meta.fields){if(['esriFieldTypeOID','esriFieldTypeGlobalID','esriFieldTypeGeometry','esriFieldTypeBlob','esriFieldTypeRaster','esriFieldTypeXML'].includes(field.type)||Object.values(meta.editFieldsInfo||{}).includes(field.name))continue;const input=document.createElement('input');input.type='checkbox';input.value=field.name;input.setAttribute('aria-label',option.text+' required '+field.name);const row=document.createElement('label');row.className='null-toggle';row.append(input,document.createTextNode((field.alias||field.name)+' ['+field.name+']'));box.append(row);input.onchange=changed;fields.push(input);}
+    check.onchange=()=>{changed();$('monitor-users').replaceChildren();};layers.push({url:option.value,meta,check,fields});const info=document.createElement('p');info.className='small';info.textContent='Creator: '+(meta.editFieldsInfo?.creatorField||'not exposed')+' · Last editor: '+(meta.editFieldsInfo?.editorField||'not exposed');box.append(info);
+   }catch(error){const problem=document.createElement('p');problem.className='error';problem.textContent=error.message;box.append(problem);}
+  }assertCurrent(api,version);message(layers.length+' accessible layer(s) loaded. Select every device and junction layer you need, then its required fields.');
+ });
+ $('monitor-users-load').onclick=()=>action(async()=>{
+  const api=auth(),version=generation;if(api!==account)throw Error('Load monitor layers again for this sign-in.');const selected=selectedLayers();if(!selected.length)throw Error('Choose at least one layer.');const role=$('monitor-role').value,users=new Set(),coverage=[];
+  for(const layer of selected){try{trackingField(layer.meta,role);const rows=await readLayer(layer,api);assertCurrent(api,version);surveyUsers(layer.meta,rows,role).forEach(user=>users.add(user));const untracked=rows.filter(row=>!row.attributes[trackingField(layer.meta,role)]).length;coverage.push([layer.meta.name,rows.length,untracked+' records without a tracking username']);}catch(error){assertCurrent(api,version);coverage.push([layer.meta.name,'Not covered',error.message]);}}
+  assertCurrent(api,version);$('monitor-users').replaceChildren();for(const user of [...users].sort()){const input=document.createElement('input');input.type='checkbox';input.value=user;input.setAttribute('aria-label','Watch username '+user);input.onchange=changed;const label=document.createElement('label');label.className='null-toggle';label.dataset.username=user.toLowerCase();label.append(input,document.createTextNode(user));$('monitor-users').append(label);}
+  $('monitor-coverage').replaceChildren(makeTable(['Layer','Accessible records','Coverage notes'],coverage));message(users.size+' distinct visible tracking username(s) found. Select the usernames to watch.');
+ });
+ async function check(){
+  const api=auth(),version=generation;if(api!==account)throw Error('Load monitor layers again for this sign-in.');const selected=selectedLayers(),users=selectedUsers(),role=$('monitor-role').value;if(!selected.length||!users.length)throw Error('Select layers and at least one username.');if(selected.some(layer=>!layer.fields.some(input=>input.checked)))throw Error('Choose required attributes for every selected layer. Your template is still pending.');
+  const issues=[],coverage=[];let complete=true,recordCount=0;
+  for(const layer of selected){try{trackingField(layer.meta,role);const rows=await readLayer(layer,api);assertCurrent(api,version);issues.push(...surveyIssues(layer.url,layer.meta,rows,role,users,layer.fields.filter(input=>input.checked).map(input=>input.value)));recordCount+=rows.length;const unknown=rows.filter(row=>!row.attributes[trackingField(layer.meta,role)]).length;coverage.push([layer.meta.name,rows.length,unknown?'Incomplete attribution: '+unknown+' record(s) without username':'All accessible rows read']);if(unknown)complete=false;}catch(error){assertCurrent(api,version);complete=false;coverage.push([layer.meta.name,'Not checked',error.message]);}}
+  assertCurrent(api,version);const fresh=newSurveyIssues(issues,previous);if(complete)previous=new Set(issues.map(issue=>issue.key));else issues.forEach(issue=>previous.add(issue.key));
+  $('monitor-results').replaceChildren(makeTable(['Layer','Tracking username','Global ID / Object ID','Required field','Missing value'],issues.slice(0,1000).map(issue=>[issue.layer,issue.user,issue.id,issue.field,issue.kind])));$('monitor-coverage').replaceChildren(makeTable(['Layer','Accessible records','Coverage notes'],coverage));
+  const summary=issues.length+' missing required value(s); '+fresh.length+' new issue(s). '+recordCount+' accessible record(s) read across '+selected.length+' selected layer(s). '+(complete?'Scan complete for accessible records.':'Coverage incomplete — review problems below.')+(issues.length>1000?' Showing the first 1,000 issues.':'');$('monitor-summary').textContent=summary;message('Last check: '+new Date().toLocaleString('en-GB',{timeZone:'Africa/Kigali'})+' (Kigali)'+'. '+(running?'Monitoring continues while this app is open.':'Manual check finished.'));
+  if(fresh.length&&typeof Notification!=='undefined'&&Notification.permission==='granted')new Notification('REG Survey Quality Monitor',{body:fresh.length+' new missing required attribute issue(s) for selected usernames. Open the app for details.'});
+ }
+ $('monitor-check').onclick=()=>action(check);
+ async function tick(){if(!running)return;if(busy||state.busy){timer=setTimeout(tick,5000);return;}await action(check);if(running)timer=setTimeout(tick,Number($('monitor-interval').value));}
+ $('monitor-start').onclick=()=>{if(busy||state.busy){message('Wait for the current operation to finish.',true);return;}clearTimeout(timer);running=true;tick();};
+ $('monitor-stop').onclick=()=>stop();
+ $('monitor-role').onchange=()=>{changed();$('monitor-users').replaceChildren();};$('monitor-interval').onchange=changed;
+ $('monitor-user-search').oninput=()=>{const term=$('monitor-user-search').value.toLowerCase();for(const label of $('monitor-users').children)label.hidden=!label.dataset.username.includes(term);};
+ $('monitor-notifications').onclick=async()=>{if(typeof Notification==='undefined'){message('Desktop notifications are unavailable in this browser. In-app alerts remain available.',true);return;}const permission=await Notification.requestPermission();message(permission==='granted'?'Desktop notifications enabled. Select usernames and start monitoring.':'Desktop notifications were not enabled. In-app alerts remain available.');};
+ window.addEventListener('pagehide',()=>stop());
+}

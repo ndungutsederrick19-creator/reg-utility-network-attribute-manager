@@ -1,3 +1,4 @@
+import {attachSurveyMonitor} from './survey-monitor.js?v=surveyor-monitor-20261015';
 import {loadAttributeProfiles,matchAttributes,visibleFields} from './attribute-filter.js?v=20261015-template';
 import {attachBulk} from './bulk-ui.js?v=domain-options-20261015';
 import defaults from './config.js';
@@ -55,6 +56,7 @@ $('enable-direct-edit').onchange=()=>{if(!state.meta?.__editContext){$('enable-d
 
 
 attachBulk({state,$,run,status,makeTable,loadIds});
+attachSurveyMonitor({state,$,makeTable});
 
 $('attribute-profile').add(new Option('Choose the data attributes to show…',''));
 for(const profile of attributeProfiles.profiles)$('attribute-profile').add(new Option(profile.label,profile.id));
