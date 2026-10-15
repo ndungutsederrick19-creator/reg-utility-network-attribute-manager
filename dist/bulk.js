@@ -1,5 +1,9 @@
 import {parseGlobalIds,globalIdField,editable,editingReason,domainFor,parseValue,versionParameters,verifiedDefault} from './core.js?v=20261015-template';
 export const BULK_LIMIT=500;
+const headerKey=value=>String(value??'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+export function matchImportColumns(headers,meta){
+ return headers.map(header=>{if(header==null||String(header).trim()==='')return null;const exact=meta.fields.filter(f=>f.name.toLowerCase()===String(header).trim().toLowerCase());const matches=exact.length?exact:meta.fields.filter(f=>headerKey(f.name)===headerKey(header)||(f.alias&&headerKey(f.alias)===headerKey(header)));if(matches.length!==1)throw Error('Unknown or ambiguous column: '+header+'. Use the actual UN field name or its unique alias.');return {header:String(header),field:matches[0]};});
+}
 export function normalizeId(value){const ids=parseGlobalIds(String(value??''));if(ids.length!==1)throw Error('Each row needs exactly one Global ID.');return ids[0];}
 function valueFor(raw,field,meta,attrs){
  const domain=domainFor(meta,field,attrs);if(raw==='__NULL__')return parseValue('',field,domain,true);if(raw==='__EMPTY__')raw='';
@@ -8,7 +12,7 @@ function valueFor(raw,field,meta,attrs){
  return parseValue(String(raw),field,domain,false);
 }
 export function parseImport(rows,meta){
- if(rows.length<2)throw Error('The worksheet needs a header and at least one device row.');const headers=rows[0];const gid=globalIdField(meta);if(!gid)throw Error('The selected layer has no Global ID field.');const fields=headers.map(h=>{if(h==null||h==='')return null;const key=String(h).trim().toLowerCase();const exact=meta.fields.find(f=>f.name.toLowerCase()===key);if(exact)return exact;const aliases=meta.fields.filter(f=>f.alias?.toLowerCase()===key);if(aliases.length===1)return aliases[0];throw Error('Unknown or ambiguous column: '+h+'. Use a downloaded template.');});
+ if(rows.length<2)throw Error('The worksheet needs a header and at least one device row.');const headers=rows[0];const gid=globalIdField(meta);if(!gid)throw Error('The selected layer has no Global ID field.');const fields=matchImportColumns(headers,meta).map(m=>m?.field||null);
  const names=fields.filter(Boolean).map(f=>f.name);if(new Set(names).size!==names.length)throw Error('Duplicate columns map to the same field.');const index=fields.findIndex(f=>f?.name===gid.name);if(index<0)throw Error('Include the '+gid.name+' Global ID column.');const seen=new Set(),records=[];
  for(let i=1;i<rows.length;i++){const row=rows[i];if(!row.some(v=>v!==''&&v!=null))continue;const id=normalizeId(row[index]);if(seen.has(id))throw Error('Duplicate Global ID at Excel row '+(i+1)+': '+id);seen.add(id);const changes={};for(let c=0;c<row.length;c++){const value=row[c];if(value==null||value==='')continue;if(!fields[c])throw Error('A populated column has no header at row '+(i+1)+'.');if(c!==index)changes[fields[c].name]=value;}records.push({globalId:id,values:changes,row:i+1});}
  if(!records.length||records.length>BULK_LIMIT)throw Error('Import between 1 and 500 devices.');return records;

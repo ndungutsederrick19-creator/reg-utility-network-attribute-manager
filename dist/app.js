@@ -1,5 +1,5 @@
 import {loadAttributeProfiles,matchAttributes,visibleFields} from './attribute-filter.js?v=20261015-template';
-import {attachBulk} from './bulk-ui.js?v=20261015-template';
+import {attachBulk} from './bulk-ui.js?v=partial-excel-20261015';
 import defaults from './config.js';
 import {secureUrl,randomKey,challenge,ArcGIS,editable,parseValue,domainFor,inspect,passwordSession,globalIdField,globalIdWhere,editingReason,verifiedDefault,versionParameters,parseGlobalIds} from './core.js?v=20261015-template';
 import {workbook} from './xlsx.js';

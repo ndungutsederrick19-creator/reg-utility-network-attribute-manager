@@ -13,3 +13,16 @@ test('mixed server outcomes do not claim success when rollback was requested',as
 test('unchanged system columns in exported data are ignored; changed system values are blocked',()=>{const same=makePlan([{globalId:gid(1),values:{OID:1,Height:12}}],features,meta,user);assert.equal(same.errors.length,0);assert.equal(same.records[0].changes.length,1);const changed=makePlan([{globalId:gid(1),values:{OID:99}}],features,meta,user);assert.equal(changed.errors.length,1);});
 test('XLSX ZIP reader accepts app workbooks and detects corruption',async()=>{const blob=workbook([{name:'Edits',rows:[['GLOBALID','Height'],[gid(1),12]]}]);const buffer=await blob.arrayBuffer();const entries=await unzipXlsx(buffer);assert.ok(entries.get('xl/worksheets/sheet1.xml').includes('Height'));const bytes=new Uint8Array(buffer);const v=new DataView(buffer);bytes[30+v.getUint16(26,true)]^=1;await assert.rejects(()=>unzipXlsx(bytes.buffer));await assert.rejects(()=>unzipXlsx(new Uint8Array(100).buffer),/not a supported/);});
 
+
+test('partial Excel supplies only three attributes and preserves every omitted field in write payload',()=>{
+ const m={...meta,fields:[...meta.fields,{name:'Rating',alias:'TRF Rating (kVA)',type:'esriFieldTypeDouble',editable:true,nullable:true}]};
+ const original=[{attributes:{...features[0].attributes,Rating:50,Unlisted:'keep'}}];
+ const rows=parseImport([['Global_ID','Pole-height','Material','TRF Rating kVA'],[gid(1),12,'Metal',100]],m);
+ const plan=makePlan(rows,original,m,user);assert.equal(plan.errors.length,0);
+ assert.deepEqual(checkPlan(plan,original,m,user),[{attributes:{OID:1,Height:12,Material:'M',Rating:100}}]);
+ assert.equal(original[0].attributes.Unlisted,'keep');
+});
+test('partial Excel rejects ambiguous normalized aliases instead of guessing',()=>{
+ const m={...meta,fields:[...meta.fields,{name:'OtherHeight',alias:'Pole-height',type:'esriFieldTypeDouble'}]};
+ assert.throws(()=>parseImport([['Global ID','Pole height'],[gid(1),12]],m),/ambiguous/);
+});
