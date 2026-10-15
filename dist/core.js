@@ -23,16 +23,23 @@ export async function passwordSession(username,password,referer,fetcher=fetch.bi
 function base64(b){return btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 export async function challenge(verifier){return base64(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier))));}
 export function domainFor(meta,field,attrs){const type=meta.types?.find(t=>t.id===attrs[meta.typeIdField]);return type?.domains?.[field.name] ?? field.domain;}
-export function editable(field,meta,user,attrs){
+export function editingReason(field,meta,user,attrs){
  const privileges=user?.privileges||[];
  const roleOk=privileges.includes('features:user:edit')||privileges.includes('features:user:fullEdit')||user?.role==='org_admin';
- if(!roleOk||!meta.capabilities?.split(',').map(x=>x.trim().toLowerCase()).includes('update')||field.editable!==true) return false;
- if(['esriFieldTypeOID','esriFieldTypeGlobalID','esriFieldTypeGeometry','esriFieldTypeBlob','esriFieldTypeRaster','esriFieldTypeXML'].includes(field.type)||field.name===meta.typeIdField) return false;
+ if(!roleOk)return 'Account edit privilege is not confirmed.';
+ if(!meta.capabilities?.split(',').map(x=>x.trim().toLowerCase()).includes('update'))return 'The service does not allow Update.';
+ if(field.editable!==true)return 'The service marks this field read-only.';
+ if(['esriFieldTypeOID','esriFieldTypeGlobalID','esriFieldTypeGeometry','esriFieldTypeBlob','esriFieldTypeRaster','esriFieldTypeXML'].includes(field.type))return 'System identifier, geometry or unsupported field type.';
+ if(field.name===meta.typeIdField)return 'Subtype changes require a separate network classification workflow.';
+ if(Object.values(meta.editFieldsInfo||{}).includes(field.name))return 'Editor tracking is maintained by the server.';
  const ownership=meta.ownershipBasedAccessControlForFeatures;
- if(ownership?.allowOthersToUpdate===false){const creator=meta.editFieldsInfo?.creatorField; if(!creator||attrs[creator]!==user.username) return false;}
- if(meta.isDataVersioned||meta.isDataArchived) return false;
- return true;
+ if(ownership?.allowOthersToUpdate===false){const creator=meta.editFieldsInfo?.creatorField; if(!creator||attrs[creator]!==user.username) return 'Ownership restrictions prevent editing this record.';}
+ if(meta.isDataVersioned){if(!meta.__editContext?.verifiedDefault)return meta.__versionError||'The default editing version has not been verified.';if(!meta.__editEnabled)return 'Enable direct editing of the displayed default version first.';}
+ return '';
 }
+export function editable(field,meta,user,attrs){return !editingReason(field,meta,user,attrs);}
+export function verifiedDefault(info){if(typeof info?.defaultVersionName!=='string'||!info.defaultVersionName.trim()||typeof info.defaultVersionGuid!=='string'||!/^\{?[0-9a-f-]{36}\}?$/i.test(info.defaultVersionGuid))throw Error('The service did not identify its default version.');return {versionName:info.defaultVersionName,versionGuid:info.defaultVersionGuid,verifiedDefault:true};}
+export function versionParameters(meta){if(!meta.isDataVersioned)return {};if(!meta.__editContext?.verifiedDefault)throw Error('A verified default version is required.');return {gdbVersion:meta.__editContext.versionName};}
 export function parseValue(text,field,domain,isNull=false){
  if(isNull){if(field.nullable===false)throw Error('This field does not allow null.');return null;}
  let value=text;
@@ -51,9 +58,9 @@ export function parseValue(text,field,domain,isNull=false){
 }
 export function inspect(meta,features){return meta.fields.map(f=>{let nulls=0,invalid=0;for(const feature of features){const v=feature.attributes[f.name],d=domainFor(meta,f,feature.attributes);if(v==null)nulls++;else if(d?.type==='codedValue'&&!d.codedValues.some(c=>c.code===v)||d?.type==='range'&&(v<d.range[0]||v>d.range[1]))invalid++;}return {field:f.name,alias:f.alias||f.name,type:f.type,nullable:f.nullable!==false,nulls,invalid};});}
 export class ArcGIS {
- constructor(portal,token,expires,fetcher=fetch.bind(globalThis)){this.portal=secureUrl(portal);this.token=token;this.expires=expires;this.fetcher=fetcher;this.allowed=new Set([new URL(this.portal).origin]);}
+ constructor(portal,token,expires,fetcher=fetch.bind(globalThis)){this.portal=secureUrl(portal);this.token=token;this.expires=expires;this.fetcher=fetcher;this.allowed=new Set([new URL(this.portal).origin]);this.versions=new Map();}
  allow(url){const u=secureUrl(url);this.allowed.add(new URL(u).origin);return u;}
- async request(url,params={}){const u=secureUrl(url);if(!this.allowed.has(new URL(u).origin))throw Error('Service origin has not been approved.');if(Date.now()>=this.expires)throw Error('Session expired. Sign in again.');const body=new URLSearchParams({f:'json',...params,token:this.token});const r=await this.fetcher(u,{method:'POST',body,credentials:'omit',cache:'no-store',referrerPolicy:'origin'});if(!r.ok)throw Error(`Service request failed (${r.status}).`);const j=await r.json();if(j.error)throw Error(`ArcGIS ${j.error.code}: ${j.error.message}. ${(j.error.details||[]).join(' ')}`);return j;}
+ async request(url,params={},method='POST'){const u=secureUrl(url);if(!this.allowed.has(new URL(u).origin))throw Error('Service origin has not been approved.');if(Date.now()>=this.expires)throw Error('Session expired. Sign in again.');const root=u.match(/^(.*\/FeatureServer)\/\d+\/(query|applyEdits|updateFeatures)$/i)?.[1];const version=root&&this.versions.get(root);const body=new URLSearchParams({f:'json',...(version?{gdbVersion:version}:{}),...params,token:this.token});const options={method,credentials:'omit',cache:'no-store',referrerPolicy:'origin'};if(method==='GET')options.headers={'X-Esri-Authorization':'Bearer '+this.token};else options.body=body;const r=await this.fetcher(u+(method==='GET'?'?f=json':''),options);if(!r.ok)throw Error(`Service request failed (${r.status}).`);const j=await r.json();if(j.error)throw Error(`ArcGIS ${j.error.code}: ${j.error.message}. ${(j.error.details||[]).join(' ')}`);return j;}
  async discover(term=''){let results=[],start=1;do{const j=await this.request(this.portal+'/sharing/rest/search',{q:`type:"Feature Service" ${term}`,start,num:100,sortField:'title',sortOrder:'asc'});results.push(...(j.results||[]));start=j.nextStart;}while(start>0);return results;}
  async ids(url,where='1=1'){const j=await this.request(url+'/query',{where,returnIdsOnly:true});if(!Array.isArray(j.objectIds))throw Error('Service did not return object IDs.');return [...new Set(j.objectIds)].sort((a,b)=>a-b);}
  async records(url,ids,meta){if(!ids.length)return [];const j=await this.request(url+'/query',{objectIds:ids.join(','),outFields:'*',returnGeometry:false});const features=j.features||[];const key=meta.objectIdField||meta.fields.find(f=>f.type==='esriFieldTypeOID')?.name;const found=new Set(features.map(f=>f.attributes[key]));if(j.exceededTransferLimit||ids.some(id=>!found.has(id))){if(ids.length===1)throw Error(`Record ${ids[0]} is missing or inaccessible; refresh and retry.`);const m=Math.floor(ids.length/2);return [...await this.records(url,ids.slice(0,m),meta),...await this.records(url,ids.slice(m),meta)];}const byId=new Map(features.map(f=>[f.attributes[key],f]));return ids.map(id=>byId.get(id));}

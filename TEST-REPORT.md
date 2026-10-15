@@ -1,5 +1,9 @@
 # Verification report — 14 October 2026
 
+## Direct default-version editing update — 15 October 2026
+
+23 automated tests pass. Additional coverage verifies that versioned edits require a server-verified default version and explicit enablement; account, field, ownership and audit restrictions still apply; queries and writes carry the same gdbVersion without named-version session IDs; version metadata uses header authentication. Browser testing with a synthetic versioned service verified selecting the default target, enabling editing, typing into a NULL field, reviewing the target and before/after values, and saving through applyEdits. The synthetic server required the correct version parameter and the updated value was reloaded. No production REG write was performed. Earlier statements about blanket versioned editing restrictions below describe the initial release and are superseded by this update.
+
 ## Passed
 
 - 10 Node.js automated tests: RFC 7636 S256 PKCE vector; secure URL restrictions; null, domain, string, numeric and range validation; permission/ownership/versioning checks; subtype domains and null inspection; complete multi-page export with recursive truncation recovery; missing-record abort; expired sessions/unapproved origins/REST errors; paginated discovery; XLSX ZIP/text/numeric encoding.
