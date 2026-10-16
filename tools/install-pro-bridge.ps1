@@ -3,9 +3,13 @@ $ErrorActionPreference='Stop'
 $projectFile=(Resolve-Path -LiteralPath $ProjectPath).Path
 if([IO.Path]::GetExtension($projectFile) -ne '.aprx'){throw 'Choose an ArcGIS Pro project (.aprx).'}
 $pythonRoot=Join-Path $env:ProgramFiles 'ArcGIS\Pro\bin\Python\envs\arcgispro-py3'
-$bridgeDir=Join-Path $env:LOCALAPPDATA 'REG Utility Manager\ProBridge'
+$bridgeDir=Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'REG Pro Alert Launcher'
 New-Item -ItemType Directory -Path $bridgeDir -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'pro_bridge.py') -Destination (Join-Path $bridgeDir 'pro_bridge.py') -Force
+$compiler=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+$launcher=Join-Path $bridgeDir 'REG Pro Alert Launcher.exe'
+& $compiler /nologo /target:winexe /reference:System.Windows.Forms.dll ('/out:'+$launcher) (Join-Path $PSScriptRoot 'reg_alert_launcher.cs')
+if($LASTEXITCODE -ne 0){throw 'REG launcher compilation failed.'}
 $inspection=@'
 import arcpy,json,re,sys
 p=arcpy.mp.ArcGISProject(sys.argv[1]);urls=[]
@@ -24,14 +28,16 @@ New-Item -Path $regPath -Force | Out-Null
 Set-Item -Path $regPath -Value 'URL:REG Utility Network alert'
 New-ItemProperty -Path $regPath -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null
 New-Item -Path ($regPath+'\shell\open\command') -Force | Out-Null
-Set-Item -Path ($regPath+'\shell\open\command') -Value ('"'+(Join-Path $pythonRoot 'pythonw.exe')+'" "'+(Join-Path $bridgeDir 'pro_bridge.py')+'" "%1"')
+Set-Item -Path ($regPath+'\shell\open\command') -Value ('"'+$launcher+'" "%1"')
 Write-Output 'REG alert connection installed for this Windows account. Enable the Open ArcGIS Pro on alert-click option in the monitor.'
 
 $fileClass='HKCU:\Software\Classes\REG.UtilityNetworkAlert'
 New-Item -Path $fileClass -Force | Out-Null
 Set-Item -Path $fileClass -Value 'REG Utility Network feature alert'
 New-Item -Path ($fileClass+'\shell\open\command') -Force | Out-Null
-Set-Item -Path ($fileClass+'\shell\open\command') -Value ('"'+(Join-Path $pythonRoot 'pythonw.exe')+'" "'+(Join-Path $bridgeDir 'pro_bridge.py')+'" "%1"')
+Set-Item -Path ($fileClass+'\shell\open\command') -Value ('"'+$launcher+'" "%1"')
 New-Item -Path 'HKCU:\Software\Classes\.regalert' -Force | Out-Null
 Set-Item -Path 'HKCU:\Software\Classes\.regalert' -Value 'REG.UtilityNetworkAlert'
 & (Join-Path $pythonRoot 'python.exe') -c 'import ctypes;ctypes.windll.shell32.SHChangeNotify(0x08000000,0,None,None)'
+
+Write-Output ('If Windows asks which app to use, choose an app on your PC and select: '+$launcher)
