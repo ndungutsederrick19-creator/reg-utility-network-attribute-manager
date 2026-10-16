@@ -1,5 +1,5 @@
 """Local, credential-free REG alert handoff. Never writes feature data or original project."""
-import json, math, os, re, sys, uuid
+import json, math, os, re, sys, uuid, zipfile
 from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
 
@@ -20,6 +20,31 @@ def validate_link(link, config):
     if not isinstance(box,list) or len(box)!=4 or any(type(v) not in (int,float) or not math.isfinite(v) or abs(v)>40000000 for v in box) or box[0]>=box[2] or box[1]>=box[3]: raise ValueError('Invalid feature extent.')
     if not isinstance(fields,list) or not 1<=len(fields)<=1000 or any(not isinstance(f,str) or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_.]{0,254}',f) for f in fields): raise ValueError('Invalid field names.')
     return data
+
+def focus_saved_view(target,map_uri,extent):
+    """Update only the generated copy's saved map-pane camera, which overrides defaults."""
+    temporary=target.with_suffix('.view.tmp')
+    with zipfile.ZipFile(target,'r') as source:
+        map_path=map_uri.replace('CIMPATH=','')
+        map_json=json.loads(source.read(map_path))
+        camera=map_json.get('defaultCamera')
+        if not camera: raise ValueError('The focused map camera could not be saved.')
+        project_json=json.loads(source.read('GISProject.json'))
+        count=0
+        for view in project_json.get('views',[]):
+            if view.get('type')!='CIMMapView' or view.get('viewableObjectPath')!=map_uri: continue
+            prior=view.get('camera',{});aspect=prior.get('viewportWidth',1)/max(prior.get('viewportHeight',1),1e-20)
+            if not math.isfinite(aspect) or not .1<aspect<10: aspect=1.5
+            height=max(extent[3]-extent[1],(extent[2]-extent[0])/aspect)
+            updated={**camera,'viewportHeight':height,'viewportWidth':height*aspect}
+            view['camera']=updated;count+=1
+        if not count: raise ValueError('LV needs an existing open map view for automatic focus. Open its map, save LV, and try again.')
+        with zipfile.ZipFile(temporary,'w') as output:
+            for item in source.infolist():
+                content=json.dumps(project_json,ensure_ascii=False).encode('utf-8') if item.filename=='GISProject.json' else source.read(item.filename)
+                output.writestr(item,content)
+    temporary.replace(target)
+
 
 def prepare_project(data, config, arcpy):
     original=Path(config['project']).resolve()
@@ -53,6 +78,7 @@ def prepare_project(data, config, arcpy):
     layer.definitionQuery=data['globalIdField']+" = '"+data['globalId']+"'"
     layer.setSelectionSet([data['objectId']], 'NEW')
     project.saveACopy(str(target))
+    focus_saved_view(target,map_.URI,[e.XMin,e.YMin,e.XMax,e.YMax])
     return target
 
 def main():

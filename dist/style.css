@@ -9,3 +9,5 @@ textarea{display:block;width:100%;border:1px solid #c4d5cf;border-radius:7px;bac
 #monitor-layers details{padding:12px 16px;margin:12px 0;background:#f2f7f4;border:1px solid #d5e4dc;border-radius:8px}#monitor-layers details[open]{max-height:400px;overflow:auto}#monitor-layers label,#monitor-users label{padding:6px 0}#monitor-users{max-height:300px;overflow:auto}#monitor-status,#monitor-summary{padding:14px;background:#e4eee8;border-left:4px solid #449477;overflow-wrap:anywhere}#monitor-summary:empty{display:none}#monitor-coverage td{white-space:normal;min-width:140px}#monitor-results{margin:18px 0}
 
 #monitor-issue-text{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}#monitor-results tr[tabindex]{cursor:pointer}#monitor-results tr[tabindex]:hover{background:#e0eee7}
+
+.pro-open-link{display:inline-block;padding:12px 16px;border-radius:5px;text-decoration:none;cursor:pointer}.pro-open-link[aria-disabled="true"]{opacity:.6}
