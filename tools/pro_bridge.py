@@ -1,7 +1,7 @@
 """Local, credential-free REG alert handoff. Never writes feature data or original project."""
-import json, math, os, re, sys, uuid, zipfile
+import json, math, os, re, sys, uuid, zipfile, subprocess, datetime
 from pathlib import Path
-from urllib.parse import urlsplit, parse_qs
+from urllib.parse import urlsplit, parse_qs, urlencode
 
 def canonical(source):
     return re.sub(r'(?i)(/FeatureServer);[^/]+/', r'\1/', source).rstrip('/').lower()
@@ -82,11 +82,23 @@ def prepare_project(data, config, arcpy):
     return target
 
 def main():
+    status_file=Path(__file__).with_name('last-status.txt');status_file.write_text('Launch received '+datetime.datetime.now(datetime.timezone.utc).isoformat(),encoding='utf-8')
     config=json.loads(Path(__file__).with_name('config.json').read_text(encoding='utf-8-sig'))
-    data=validate_link(sys.argv[1],config)
+    argument=sys.argv[1]
+    if not argument.startswith('reg-un-alert:'):
+        file=Path(argument)
+        if file.suffix.lower()!='.regalert' or not file.is_file() or file.stat().st_size>16000: raise ValueError('Choose a valid REG alert file (.regalert).')
+        raw=json.loads(file.read_text(encoding='utf-8-sig'))
+        argument='reg-un-alert://focus?'+urlencode({'data':json.dumps(raw)})
+    data=validate_link(argument,config)
     import arcpy
     target=prepare_project(data,config,arcpy)
-    if '--no-launch' not in sys.argv: os.startfile(str(target))
+    status_file.write_text('LV alert copy prepared: '+str(target),encoding='utf-8')
+    if '--no-launch' not in sys.argv:
+        executable=Path(os.environ.get('ProgramFiles',r'C:\Program Files'))/'ArcGIS/Pro/bin/ArcGISPro.exe'
+        if not executable.is_file(): raise ValueError('ArcGIS Pro executable was not found.')
+        subprocess.Popen([str(executable),str(target)])
+        status_file.write_text('ArcGIS Pro launch requested: '+str(target),encoding='utf-8')
     return target
 
 if __name__=='__main__':

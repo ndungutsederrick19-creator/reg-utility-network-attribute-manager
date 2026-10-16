@@ -26,3 +26,12 @@ New-ItemProperty -Path $regPath -Name 'URL Protocol' -Value '' -PropertyType Str
 New-Item -Path ($regPath+'\shell\open\command') -Force | Out-Null
 Set-Item -Path ($regPath+'\shell\open\command') -Value ('"'+(Join-Path $pythonRoot 'pythonw.exe')+'" "'+(Join-Path $bridgeDir 'pro_bridge.py')+'" "%1"')
 Write-Output 'REG alert connection installed for this Windows account. Enable the Open ArcGIS Pro on alert-click option in the monitor.'
+
+$fileClass='HKCU:\Software\Classes\REG.UtilityNetworkAlert'
+New-Item -Path $fileClass -Force | Out-Null
+Set-Item -Path $fileClass -Value 'REG Utility Network feature alert'
+New-Item -Path ($fileClass+'\shell\open\command') -Force | Out-Null
+Set-Item -Path ($fileClass+'\shell\open\command') -Value ('"'+(Join-Path $pythonRoot 'pythonw.exe')+'" "'+(Join-Path $bridgeDir 'pro_bridge.py')+'" "%1"')
+New-Item -Path 'HKCU:\Software\Classes\.regalert' -Force | Out-Null
+Set-Item -Path 'HKCU:\Software\Classes\.regalert' -Value 'REG.UtilityNetworkAlert'
+& (Join-Path $pythonRoot 'python.exe') -c 'import ctypes;ctypes.windll.shell32.SHChangeNotify(0x08000000,0,None,None)'
