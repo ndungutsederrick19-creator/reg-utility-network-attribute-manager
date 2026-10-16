@@ -144,3 +144,7 @@ Monitor all usernames checks every readable record each polling cycle, including
 ### Add several layers from service discovery
 
 The service section includes Add multiple layers to monitoring with one checkbox for each actual layer/table returned by the service. Select any combination, or use the three-name selection shortcut, then Add selected layers to monitor. The checked set becomes the monitor coverage selection. Existing rules and username choices for those same layer URLs are retained during the transition. Missing schemas fail visibly. The separate single-layer selector continues to open the attribute inspection/editing table. No records are written by adding monitoring layers.
+
+### Save selected monitoring attributes
+
+Each layer has a Save selected attributes button outside its scrolling field list. The section also offers Save selected attributes for all selected layers. These controls persist only field names for the layer URLs, scoped to the portal account in this browser, and show the saved names/count. No username selection is required. Loading the layers restores their saved attributes; fields removed from the service schema are reported and omitted. Monitoring setup/query presets can override these choices when explicitly restored. Saving rules does not edit network feature values or start monitoring.
