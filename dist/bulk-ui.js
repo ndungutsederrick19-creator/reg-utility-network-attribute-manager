@@ -7,7 +7,7 @@ import {workbook} from './xlsx.js';
 import {renderExcelEditor} from './excel-editor.js?v=domain-options-20261015';
 import {mergeIdenticalColumns,mappedExcelRows,writableExcelRows,renderColumnMapping} from './excel-mapping.js?v=structured-save-20261015';
 export function attachBulk({state,$,run,status,makeTable,loadIds}){
- let plan=null,uploaded=null,bulkFeatures=[];
+ let plan=null,uploaded=null,bulkFeatures=[];window.addEventListener('reg-query-reset',()=>{plan=null;uploaded=null;bulkFeatures=[];});
  function updateBatchControl(){const field=state.meta.fields.find(f=>f.name===$('batch-field').value);if(!field)return;const domain=commonDomain(state.meta,field,bulkFeatures),control=valueControl(field,domain);control.id='batch-value';$('batch-value').replaceWith(control);$('batch-null').checked=false;$('batch-null').disabled=field.nullable===false;}
  $('batch-field').onchange=updateBatchControl;
  function context(requireEditing=true){if(!state.meta)throw Error('Select a feature layer first.');if(!globalIdField(state.meta))throw Error('This layer has no Global ID field.');if(requireEditing&&state.meta.isDataVersioned&&(!state.meta.__editContext||!state.meta.__editEnabled))throw Error('Enable direct editing of the verified default version first.');return {api:state.api,url:state.url,meta:structuredClone(state.meta),user:structuredClone(state.user),base:state.baseWhere};}
