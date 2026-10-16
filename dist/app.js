@@ -1,4 +1,4 @@
-import {attachSurveyMonitor} from './survey-monitor.js?v=creator-picker-20261016';
+import {attachSurveyMonitor} from './survey-monitor.js?v=select-only-20261016';
 import {loadAttributeProfiles,matchAttributes,visibleFields} from './attribute-filter.js?v=20261015-template';
 import {attachBulk} from './bulk-ui.js?v=domain-options-20261015';
 import defaults from './config.js';
