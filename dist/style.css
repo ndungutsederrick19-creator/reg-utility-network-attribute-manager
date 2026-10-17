@@ -19,3 +19,5 @@ textarea{display:block;width:100%;border:1px solid #c4d5cf;border-radius:7px;bac
 #admin-sector{flex:1;min-width:240px;max-height:260px;overflow:auto;border:1px solid #bad0c8;border-radius:6px;padding:12px}#admin-sector label{min-width:0}
 
 #monitor-attachments{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.attachment-card{border:1px solid #c7dad3;border-radius:8px;padding:12px;overflow-wrap:anywhere}.attachment-card img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin-bottom:10px}
+
+#survey-map{height:560px;min-height:350px;width:100%;border:1px solid #b9ccc6;border-radius:8px;background:#e4ece8;z-index:0}#survey-map .leaflet-popup-content p{white-space:pre-line}#survey-map .leaflet-control-attribution{font-size:10px}#survey-map-card select{min-width:160px}
