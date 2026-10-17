@@ -176,3 +176,11 @@ Download Pro alert file is a second handoff path for browsers that block or do n
 ### Windows asks which app opens .regalert
 
 Choose **Choose an app on your PC**, browse to Documents/REG Pro Alert Launcher/REG Pro Alert Launcher.exe, and select **Always** if desired. Do not assign raw .regalert JSON to ArcGISPro.exe or a text editor. The named Windows launcher invokes the validated helper, then the prepared .aprx is opened by Pro. The installer now places the launcher/helper/config in Documents to avoid packaged-desktop app redirection affecting per-user launch registrations; a normal Windows Open with choice establishes the association in Explorer's context. The small .NET launcher is built from tools/reg_alert_launcher.cs using the Windows .NET Framework compiler. Config and generated projects remain local.
+
+### Collection times on alerts
+
+Alerts and result rows show recorded collection/creation and last-edited timestamps, plus a separate per-layer issue-detection time. Each layer has a Collection / creation time field selector populated only from actual esriFieldTypeDate fields. It defaults to editor-tracking creationDateField, or a recognised actual created_date/CreationDate field if metadata is absent; arbitrary installation/year fields are not inferred as collection dates. Select an actual survey-time field when available, since server creation can represent synchronisation time instead of offline collection. The chosen date field is retained in saved queries and monitoring links.
+
+Known UTC epoch-millisecond values display in Africa/Kigali (UTC+02:00), including seconds. NULL/invalid/unexposed times remain Not available. Layers reporting unknown time zones display the stored value with an explicit unknown-zone label and no inferred relative age. A live clock and active-alert age update each second, while record scans remain polling-based (1, 5 or 15 minutes, scheduled after each completed scan); this is not a server-push/instant stream. Every scan rereads accessible records; next-check and last-completed-scan times are visible. Background throttling or long scans can delay alerts.
+
+Metadata reference: https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/

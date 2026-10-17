@@ -11,3 +11,5 @@ textarea{display:block;width:100%;border:1px solid #c4d5cf;border-radius:7px;bac
 #monitor-issue-text{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}#monitor-results tr[tabindex]{cursor:pointer}#monitor-results tr[tabindex]:hover{background:#e0eee7}
 
 .pro-open-link{display:inline-block;padding:12px 16px;border-radius:5px;text-decoration:none;cursor:pointer}.pro-open-link[aria-disabled="true"]{opacity:.6}
+
+#monitor-issue-times{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;background:#eef6f1;padding:12px;border-radius:6px}
