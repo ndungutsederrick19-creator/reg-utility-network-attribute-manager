@@ -1,15 +1,15 @@
-import {attachSurveyMap} from './survey-map.js?v=survey-map-20261017';
-import {boundaryGeometry,polygonParams} from './boundary-filter.js?v=survey-map-20261017';
-import {attachHistory} from './history.js?v=survey-map-20261017';
-import {attachAlertEditor} from './alert-editor.js?v=survey-map-20261017';
-import {checkedAttributes} from './survey-checks.js?v=survey-map-20261017';
-import {attachAlertAttachments} from './attachments.js?v=survey-map-20261017';
-import {attachBoundary} from './boundary-filter.js?v=survey-map-20261017';
-import {dateField,formatTime,collectionAge,timeInfo} from './collection-time.js?v=survey-map-20261017';
-import {groupIssues,alertBody,geometryExtent,proLink} from './issue-alerts.js?v=survey-map-20261017';
+import {attachSurveyMap} from './survey-map.js?v=map-labels-20261017';
+import {boundaryGeometry,polygonParams} from './boundary-filter.js?v=map-labels-20261017';
+import {attachHistory} from './history.js?v=map-labels-20261017';
+import {attachAlertEditor} from './alert-editor.js?v=map-labels-20261017';
+import {checkedAttributes} from './survey-checks.js?v=map-labels-20261017';
+import {attachAlertAttachments} from './attachments.js?v=map-labels-20261017';
+import {attachBoundary} from './boundary-filter.js?v=map-labels-20261017';
+import {dateField,formatTime,collectionAge,timeInfo} from './collection-time.js?v=map-labels-20261017';
+import {groupIssues,alertBody,geometryExtent,proLink} from './issue-alerts.js?v=map-labels-20261017';
 import {rulesKey,saveRules,readRules} from './attribute-rules.js?v=save-attributes-20261016';
-import {monitorLinkKey,saveMonitorLink,readMonitorLink} from './monitor-links.js?v=survey-map-20261017';
-import {defaultUsernameField,trackingField,surveyUsers,surveyIssues,newSurveyIssues,loadSurveyRows,loadSurveyUsernames} from './survey-checks.js?v=survey-map-20261017';
+import {monitorLinkKey,saveMonitorLink,readMonitorLink} from './monitor-links.js?v=map-labels-20261017';
+import {defaultUsernameField,trackingField,surveyUsers,surveyIssues,newSurveyIssues,loadSurveyRows,loadSurveyUsernames} from './survey-checks.js?v=map-labels-20261017';
 export function attachSurveyMonitor({state,$,makeTable,onSettingsChange=()=>{}}){
  let layers=[],account=null,timer=null,running=false,busy=false,currentIssues=[],lastScan=null,nextCheck=null,activeIssue=null,preparedPro=null,previous=new Set(),generation=0;
  const message=(value,error=false)=>{$('monitor-status').textContent=value;$('monitor-status').classList.toggle('error',error);$('monitor-user-status').textContent=value;$('monitor-user-status').classList.toggle('error',error);};

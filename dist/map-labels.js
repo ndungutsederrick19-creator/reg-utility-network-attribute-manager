@@ -1,0 +1,4 @@
+import {domainFor} from './core.js?v=20261015-template';
+import {formatTime} from './collection-time.js?v=20261017';
+export function labelFields(meta){return meta.fields.filter(f=>!['esriFieldTypeGeometry','esriFieldTypeBlob','esriFieldTypeRaster','esriFieldTypeXML'].includes(f.type));}
+export function labelText(meta,attributes,name){const field=labelFields(meta).find(f=>f.name===name);if(!field)return '';const value=attributes[name];if(value==null)return (field.alias||name)+': NULL';if(typeof value==='string'&&!value.trim())return (field.alias||name)+': Blank';const domain=domainFor(meta,field,attributes),code=domain?.type==='codedValue'?domain.codedValues.find(c=>c.code===value):null;return String(code?code.name+' ['+value+']':field.type==='esriFieldTypeDate'?formatTime(value,meta.datesInUnknownTimezone===true||meta.dateFieldsTimeReference?.timeZone==='Unknown'):value);}
