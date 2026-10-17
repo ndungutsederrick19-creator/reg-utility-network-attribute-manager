@@ -1,4 +1,4 @@
-import {cleanBoundary} from './boundary-filter.js?v=admin-20261017';
+import {cleanBoundary} from './boundary-filter.js?v=multi-sectors-20261017';
 export function monitorLinkKey(portal,username){if(!portal||!username)throw Error('Sign in before saving a monitoring link.');return 'reg.monitor.link.v1:'+JSON.stringify([portal,username]);}
 export function validateMonitorLink(link){
  if(link?.version!==1||typeof link.name!=='string'||!['creator','editor'].includes(link.role)||![60000,300000,900000].includes(link.interval)||!Array.isArray(link.users)||(!link.users.length&&!link.allUsers)||!link.users.every(user=>typeof user==='string'&&user.trim())||!Array.isArray(link.layers)||!link.layers.length)throw Error('The saved monitoring link is invalid. Save a new link.');

@@ -1,9 +1,9 @@
-import {attachBoundary} from './boundary-filter.js?v=admin-20261017';
-import {dateField,formatTime,collectionAge} from './collection-time.js?v=admin-20261017';
-import {groupIssues,alertBody,geometryExtent,proLink} from './issue-alerts.js?v=admin-20261017';
+import {attachBoundary} from './boundary-filter.js?v=multi-sectors-20261017';
+import {dateField,formatTime,collectionAge} from './collection-time.js?v=multi-sectors-20261017';
+import {groupIssues,alertBody,geometryExtent,proLink} from './issue-alerts.js?v=multi-sectors-20261017';
 import {rulesKey,saveRules,readRules} from './attribute-rules.js?v=save-attributes-20261016';
-import {monitorLinkKey,saveMonitorLink,readMonitorLink} from './monitor-links.js?v=admin-20261017';
-import {defaultUsernameField,trackingField,surveyUsers,surveyIssues,newSurveyIssues,loadSurveyRows,loadSurveyUsernames} from './survey-checks.js?v=admin-20261017';
+import {monitorLinkKey,saveMonitorLink,readMonitorLink} from './monitor-links.js?v=multi-sectors-20261017';
+import {defaultUsernameField,trackingField,surveyUsers,surveyIssues,newSurveyIssues,loadSurveyRows,loadSurveyUsernames} from './survey-checks.js?v=multi-sectors-20261017';
 export function attachSurveyMonitor({state,$,makeTable,onSettingsChange=()=>{}}){
  let layers=[],account=null,timer=null,running=false,busy=false,currentIssues=[],lastScan=null,nextCheck=null,activeIssue=null,preparedPro=null,previous=new Set(),generation=0;
  const message=(value,error=false)=>{$('monitor-status').textContent=value;$('monitor-status').classList.toggle('error',error);$('monitor-user-status').textContent=value;$('monitor-user-status').classList.toggle('error',error);};

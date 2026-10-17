@@ -1,4 +1,4 @@
-import {scopedIds} from './boundary-filter.js?v=admin-20261017';
+import {scopedIds} from './boundary-filter.js?v=multi-sectors-20261017';
 import {timeInfo} from './collection-time.js?v=collection-time-20261017';
 import {globalIdField} from './core.js?v=20261015-template';
 export function defaultUsernameField(meta,role='creator'){const created=role==='creator'&&meta.fields?.find(f=>f.name.toLowerCase()==='created_user'&&f.type==='esriFieldTypeString');if(created)return created.name;const name=meta.editFieldsInfo?.[role==='editor'?'editorField':'creatorField'];return meta.fields?.some(f=>f.name===name)?name:'';}
