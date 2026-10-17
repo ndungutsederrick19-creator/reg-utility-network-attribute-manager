@@ -1,16 +1,16 @@
-import {attachBoundary} from './boundary-filter.js?v=boundary-20261017';
-import {dateField,formatTime,collectionAge} from './collection-time.js?v=boundary-20261017';
-import {groupIssues,alertBody,geometryExtent,proLink} from './issue-alerts.js?v=boundary-20261017';
+import {attachBoundary} from './boundary-filter.js?v=admin-20261017';
+import {dateField,formatTime,collectionAge} from './collection-time.js?v=admin-20261017';
+import {groupIssues,alertBody,geometryExtent,proLink} from './issue-alerts.js?v=admin-20261017';
 import {rulesKey,saveRules,readRules} from './attribute-rules.js?v=save-attributes-20261016';
-import {monitorLinkKey,saveMonitorLink,readMonitorLink} from './monitor-links.js?v=boundary-20261017';
-import {defaultUsernameField,trackingField,surveyUsers,surveyIssues,newSurveyIssues,loadSurveyRows,loadSurveyUsernames} from './survey-checks.js?v=boundary-20261017';
+import {monitorLinkKey,saveMonitorLink,readMonitorLink} from './monitor-links.js?v=admin-20261017';
+import {defaultUsernameField,trackingField,surveyUsers,surveyIssues,newSurveyIssues,loadSurveyRows,loadSurveyUsernames} from './survey-checks.js?v=admin-20261017';
 export function attachSurveyMonitor({state,$,makeTable,onSettingsChange=()=>{}}){
  let layers=[],account=null,timer=null,running=false,busy=false,currentIssues=[],lastScan=null,nextCheck=null,activeIssue=null,preparedPro=null,previous=new Set(),generation=0;
  const message=(value,error=false)=>{$('monitor-status').textContent=value;$('monitor-status').classList.toggle('error',error);$('monitor-user-status').textContent=value;$('monitor-user-status').classList.toggle('error',error);};
  function stop(reason='Monitoring stopped.'){running=false;clearTimeout(timer);timer=null;nextCheck=null;message(reason);}
  function changed(){for(const layer of layers)if(layer.attributeStatus)layer.attributeStatus.textContent='Review your choices, then Save selected attributes.';setTimeout(onSettingsChange,0);$('monitor-link-status').textContent='Selection changed. Save the monitoring link to keep these settings in this browser.';generation++;previous=new Set();stop('Settings changed. Run Check now or Start monitoring with your new selection.');$('monitor-summary').textContent='Previous results may be out of date. Run a new check.';}
  function auth(){if(!state.api||!state.user)throw Error('Sign in through Attribute Manager first.');if(Date.now()>=state.api.expires)throw Error('Session expired. Sign in again before monitoring.');return state.api;}
- async function action(task){if(busy||state.busy){message('Another operation is running. Try again when it finishes.',true);return;}busy=true;try{await task();}catch(error){stop(error.message);message(error.message,true);}finally{busy=false;}}
+ async function action(task){if(busy||state.busy){message('Another operation is running. Try again when it finishes.',true);return;}busy=true;for(const level of ['province','district','sector'])$('admin-'+level).disabled=true;try{await task();}catch(error){stop(error.message);message(error.message,true);}finally{busy=false;for(const level of ['province','district','sector'])$('admin-'+level).disabled=false;}}
  const boundary=attachBoundary({$,auth,changed,action});
  const spaces=['Electric Device','Structure Junction','Electric Line'];
  function spaceFor(name){return spaces.find(space=>space.replace(/[^a-z]/gi,'').toLowerCase()===String(name).replace(/[^a-z]/gi,'').toLowerCase())||'Other layers';}

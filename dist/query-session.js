@@ -1,4 +1,4 @@
-import {cleanBoundary} from './boundary-filter.js?v=boundary-20261017';
+import {cleanBoundary} from './boundary-filter.js?v=admin-20261017';
 export function queryKey(portal,user){if(!portal||!user)throw Error('Sign in first.');return 'reg.query.v1:'+JSON.stringify([portal,user]);}
 export function cleanQuery(input){
  const https=value=>{const url=new URL(value);if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash)throw Error('Invalid saved service URL.');return url.href.replace(/\/$/,'');};
